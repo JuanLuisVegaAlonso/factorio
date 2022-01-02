@@ -1,0 +1,38 @@
+#general-info {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.row {
+    display: flex;
+}
+.square {
+    border: 1px solid black;
+}
+.minisquare {
+    width: 10px;
+    height: 10px;
+}
+.active {
+    background-color: blue;
+}
+
+.list-element {
+ display: flex;
+}
+.list-element label {
+    font-weight: 800;
+}
+#available-shifts {
+    display: flex;
+    justify-content: space-between;
+    font-size: 48px;
+}
+
+#available-shifts span{
+    cursor: pointer;
+}
+
+#available-shifts .current {
+    text-shadow: 2px 2px 8px #2BCDF3;
+}
