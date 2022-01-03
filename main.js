@@ -121,7 +121,6 @@ function createSquare(matrix, row, column) {
     const squareElement = document.createElement('div');
     squareElement.setAttribute('id', getSquareId(row, column));
     squareElement.classList.add('square');
-    squareElement.addEventListener('click', () => matrix.toggle(row,column));
     const ratio = maxHeight / rows;
     squareElement.style = `width: ${ratio}px; height: ${ratio}px; margin: ${ratio * spaceBetween}px`
     return squareElement;
@@ -256,8 +255,8 @@ window.onload = () => {
     const DEACTIVATE_MODE = 2;
 
     let mouseMode;
-    matrixDrawing.addEventListener('mousemove', event => {
-        if (event.buttons != 1) return;
+    function handleDrawing(event) {
+       if (event.type !== 'click' && event.buttons != 1 ) return;
         const id = event.target.getAttribute('id');
         if (id.startsWith('square') && id !== oldId) {
             if (!mouseMode) {
@@ -277,12 +276,12 @@ window.onload = () => {
             }
             oldId = id;
         }
-    });
+    }
+    matrixDrawing.addEventListener('mousemove', handleDrawing);
+    matrixDrawing.addEventListener('mousedown', handleDrawing);
     matrixDrawing.addEventListener('mouseup', () => {
-        console.log('clean')
         mouseMode = undefined;
     })
-    document.addEventListener('mousepressed', console.log)
     
 
 
@@ -291,19 +290,22 @@ window.onload = () => {
     const binaryRepresentationElement = document.getElementById('binary-representation');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color( 0xf0f0f0 );
-    const camera = new THREE.PerspectiveCamera( 75, 500 / maxHeight, 0.1, 1000 );
+    const camera = new THREE.PerspectiveCamera( 75, 900 / maxHeight, 0.1, 1000 );
 
     const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(500, maxHeight);
+    renderer.setSize(900, maxHeight);
     binaryRepresentationElement.appendChild( renderer.domElement );
 
     const axesHelper = new THREE.AxesHelper( 5 );
     scene.add( axesHelper );
     // geometry
 
-    const geometry = new THREE.BoxGeometry(1,1,1);
-    const inactiveMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, transparent: true, opacity: 0.1 } );
-    const activeMaterial = new THREE.MeshBasicMaterial( { color: 0x0000FF, transparent: true, opacity: 0.2 } );
+    const cubeSize = 10;
+    const geometry = new THREE.BoxGeometry(cubeSize,cubeSize,cubeSize);
+    const inactiveMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, transparent: true, depthTest: true, opacity: 0.0 } );
+    const activeMaterial = new THREE.MeshBasicMaterial( { color: 0x0000FF, transparent: true, depthTest: true, opacity: 0.2 } );
+    const nonTransparentInactiveMaterial = new THREE.MeshBasicMaterial( { color: 0xCAC9C9, transparent: false, opacity: 0.1 } );
+    const nonTransparentActiveMaterial = new THREE.MeshBasicMaterial( { color: 0x0000FF, transparent: false, opacity: 0.2 } );
     
     
     const edges = new THREE.EdgesGeometry( geometry );
@@ -316,38 +318,51 @@ window.onload = () => {
             meshColumn = [];
             for (let shift = 0; shift < 10; shift++){
                 const cube = new THREE.Mesh( geometry, inactiveMaterial );
-                const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
-                cube.position.set(row, column, shift)
-                line.position.set(row, column, shift)
+                const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x000000, transparent: true, opacity: 0.2 } ) );
+                cube.position.set(cubeSize * row + 1*row, cubeSize* column + 1*column, cubeSize * shift + 1*shift)
+                line.position.set(cubeSize * row + 1*row, cubeSize* column + 1*column, cubeSize * shift + 1*shift)
                 meshColumn.push({cube, line});
                 scene.add(cube);
-                //scene.add(line);
+                scene.add(line);
             }
             meshRow.push(meshColumn);
         }
         meshMatrix.push(meshRow)
     }
 
-    camera.position.set( 10, 10, 15 );
-    camera.lookAt( 0, 0, 0 );
+    camera.position.set( 90, 80, 150 );
+    camera.lookAt( 0, 0, 50 );
     camera.rotateX(0);
 
-    matrix.addChangeListener(() => {
-        for (let shift = 0; shift < 10; shift++){
-            const shiftedMatrix = matrix.getShiftedMatrix(shift);
-            for (let row = 0; row < rows; row++) {
-                for (let column = 0; column < columns; column++) {
-                
-                    if (shiftedMatrix[row][column] == 0) {
-                        meshMatrix[row][column][shift].cube.material = inactiveMaterial;
-                    } else {
-                        meshMatrix[row][column][shift].cube.material = activeMaterial;
+    function updateMaterials() {
+            for (let shift = 0; shift < 10; shift++){
+                const shiftedMatrix = matrix.getShiftedMatrix(shift);
+                for (let row = 0; row < rows; row++) {
+                    for (let column = 0; column < columns; column++) {
+                        let material;
+                        if (shift > matrix.getCurrentShift()) {
+                            if (shiftedMatrix[row][column] == 0) {
+                                material = inactiveMaterial;
+                            } else {
+                               material = activeMaterial;
+                            }
+                        } else {
+                            if (shiftedMatrix[row][column] == 0) {
+                               material = nonTransparentInactiveMaterial;
+                            } else {
+                               material = nonTransparentActiveMaterial;
+                            }
+                        }
+                        meshMatrix[row][column][shift].cube.material = material;
                     }
                 }
             }
-        }
+    }
+    matrix.addChangeListener(() => {
+        updateMaterials();
     })
     // animation
+    updateMaterials();
     function animate() {
         requestAnimationFrame( animate );
         renderer.render( scene, camera );
