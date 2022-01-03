@@ -122,7 +122,11 @@ function createSquare(matrix, row, column) {
     squareElement.setAttribute('id', getSquareId(row, column));
     squareElement.classList.add('square');
     const ratio = maxHeight / rows;
-    squareElement.style = `width: ${ratio}px; height: ${ratio}px; margin: ${ratio * spaceBetween}px`
+    squareElement.style = `width: ${ratio}px; height: ${ratio}px; margin: ${ratio * spaceBetween}px`;
+    const labelElement = document.createElement('label');
+    labelElement.innerText = 0;
+    squareElement.appendChild(labelElement);
+    matrix.addChangeListener(() => labelElement.innerText = matrix.getRawValue(row, column))
     return squareElement;
 }
 
@@ -241,7 +245,7 @@ window.onload = () => {
     function handleDrawing(event) {
        if (event.type !== 'click' && event.buttons != 1 ) return;
         const id = event.target.getAttribute('id');
-        if (id.startsWith('square') && id !== oldId) {
+        if (event.target.tagName === 'DIV' && id.startsWith('square') && id !== oldId) {
             if (!mouseMode) {
                 if (event.target.classList.contains('active')) {
                     mouseMode = DEACTIVATE_MODE;
@@ -275,6 +279,11 @@ window.onload = () => {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color( 0xf0f0f0 );
     const camera = new THREE.PerspectiveCamera( 45, 900 / maxHeight, 10, 10000 );
+    camera.position.set( 90, 80, 150 );
+    camera.lookAt( 0, 0, 50 );
+    const orthogonalCamera = new THREE.OrthographicCamera( -100, 100, 100, -100, 1, 1000 );
+    orthogonalCamera.position.set( 90, 80, 150 );
+    orthogonalCamera.lookAt( 0, 0, 50 );
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(900, maxHeight);
@@ -292,51 +301,54 @@ window.onload = () => {
     // geometry
 
     const cubeSize = 10;
-    const geometry = new THREE.BoxGeometry(cubeSize,cubeSize,cubeSize);
-    const inactiveMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, transparent: true, depthTest: true, opacity: 0.0 } );
+    
+    const inactiveMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, transparent: true, depthTest: true, opacity: 0.011 } );
     const activeMaterial = new THREE.MeshBasicMaterial( { color: 0x0000FF, transparent: true, depthTest: true, opacity: 0.2 } );
     const nonTransparentInactiveMaterial = new THREE.MeshBasicMaterial( { color: 0xCAC9C9, transparent: false, opacity: 0.1 } );
     const nonTransparentActiveMaterial = new THREE.MeshBasicMaterial( { color: 0x0000FF, transparent: false, opacity: 0.2 } );
+    const intersectedMaterial = new THREE.MeshBasicMaterial( { color: 0xFF00FF, transparent: false, opacity: 0.2 } );
     
     
-    const edges = new THREE.EdgesGeometry( geometry );
-    const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
-
     const meshMatrix = [];
+    const cubes = new THREE.Group();
     
     for (let row = 0; row < rows; row++) {
         const meshRow = [];
         for (let column = 0; column < columns; column++) {
             meshColumn = [];
             for (let shift = 0; shift < 10; shift++){
+                const geometry = new THREE.BoxGeometry(cubeSize,cubeSize,cubeSize);
                 const cube = new THREE.Mesh( geometry, inactiveMaterial );
+                const edges = new THREE.EdgesGeometry( geometry );
                 const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x000000, transparent: true, opacity: 0.2 } ) );
-                if (column === columns - 1 && row === 0) {
-                    const shiftDiv = document.createElement( 'div' );
-                    shiftDiv.className = 'shift';
-                    shiftDiv.textContent = `2^${shift}: ${2 << shift}`;
-                    shiftDiv.style.fontSize = '6px';
-                    const shiftLabel = new THREE.CSS3DObject( shiftDiv );
-                    shiftLabel.position.set( 0, 20, -5 );
-                    shiftLabel.lookAt(camera.position)
-                    shiftLabel.rotateOnWorldAxis(new THREE.Vector3(0,0,1), Math.PI/2)
-                    cube.add( shiftLabel );
-                }
+                // if (column === columns - 1 && row === 0) {
+                //     const shiftDiv = document.createElement( 'div' );
+                //     shiftDiv.className = 'shift';
+                //     shiftDiv.textContent = `2^${shift}: ${2 << shift}`;
+                //     shiftDiv.style.fontSize = '6px';
+                //     const shiftLabel = new THREE.CSS3DObject( shiftDiv );
+                //     shiftLabel.position.set( 0, 20, -5 );
+                //     shiftLabel.lookAt(camera.position)
+                //     shiftLabel.rotateOnWorldAxis(new THREE.Vector3(0,0,1), Math.PI/2)
+                //     cube.add( shiftLabel );
+                    
+                // }
                 
-                cube.position.set(cubeSize * row + 1*row, cubeSize* column + 1*column, cubeSize * shift + 1*shift)
-                line.position.set(cubeSize * row + 1*row, cubeSize* column + 1*column, cubeSize * shift + 1*shift)
+                cube.position.set(cubeSize * row + 1*row, cubeSize* column + 1*column, cubeSize * shift + 1*shift);
+                cube.userData.row = row;
+                cube.userData.column = column;
+                line.position.set(cubeSize * row + 1*row, cubeSize* column + 1*column, cubeSize * shift + 1*shift);
+                cubes.add(cube);
+                
                 meshColumn.push({cube, line});
-                scene.add(cube);
                 scene.add(line);
             }
             meshRow.push(meshColumn);
         }
         meshMatrix.push(meshRow)
     }
-
-    camera.position.set( 90, 80, 150 );
-    camera.lookAt( 0, 0, 50 );
-    camera.rotateX(0);
+    scene.add(cubes);
+    
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
@@ -346,7 +358,9 @@ window.onload = () => {
                 for (let row = 0; row < rows; row++) {
                     for (let column = 0; column < columns; column++) {
                         let material;
+
                         if (shift > matrix.getCurrentShift()) {
+                            
                             if (shiftedMatrix[row][column] == 0) {
                                 material = inactiveMaterial;
                             } else {
@@ -368,22 +382,102 @@ window.onload = () => {
         updateMaterials();
     })
 
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2(200,200);
 
-    labelRenderer = new THREE.CSS3DRenderer();
-    labelRenderer.setSize( 900, maxHeight );
-    labelRenderer.domElement.style.position = 'absolute';
-    labelRenderer.domElement.style.top = '0px';
-    labelRenderer.domElement.style['pointer-events'] ='none'
-    binaryRepresentationElement.appendChild( labelRenderer.domElement );
-    
+    function onMouseMove( event ) {
+
+        // calculate mouse position in normalized device coordinates
+        // (-1 to +1) for both components
+        const {x,y, width, height} = renderer.domElement.getBoundingClientRect();
+        mouse.x = ( (event.clientX  -x ) /  width)  * 2 - 1;
+        mouse.y = - (( event.clientY - y) /  height)  * 2 + 1;
+
+
+    }
+    const cubesVisual = new THREE.Group();
+    for (let shift = 0; shift < 10; shift++){
+        const geometry = new THREE.BoxGeometry(cubeSize,cubeSize,cubeSize);
+        const cube = new THREE.Mesh( geometry, inactiveMaterial );
+        // if (column === columns - 1 && row === 0) {
+        //     const shiftDiv = document.createElement( 'div' );
+        //     shiftDiv.className = 'shift';
+        //     shiftDiv.textContent = `2^${shift}: ${2 << shift}`;
+        //     shiftDiv.style.fontSize = '6px';
+        //     const shiftLabel = new THREE.CSS3DObject( shiftDiv );
+        //     shiftLabel.position.set( 0, 20, -5 );
+        //     shiftLabel.lookAt(camera.position)
+        //     shiftLabel.rotateOnWorldAxis(new THREE.Vector3(0,0,1), Math.PI/2)
+        //     cube.add( shiftLabel );
+            
+        // }
+        
+        cubesVisual.add(cube);
+        
+    }
+
+    scene.add(cubesVisual);
+
+    function onClick(event) {
+        if (selecting) {
+            selected = true;
+            console.log('selected');
+            const intersects = raycaster.intersectObjects( cubes.children);
+            const {row, column} = intersects[0].object.userData;
+            const rawValue = matrix.getRawValue(row,column);
+            renderer.render( scene, orthogonalCamera );
+            labelRenderer.render( scene, orthogonalCamera );  
+            for (let shift = 0; shift < 10; shift++){
+                
+                const {x,y,z} = orthogonalCamera.localToWorld(new THREE.Vector3(-15 * shift + 90, 00, -50));
+                cubesVisual.children[shift].position.set(x,y,z);
+                cubesVisual.children[shift].lookAt(orthogonalCamera.localToWorld(new THREE.Vector3(-15 * shift + 80, 00, -50)));
+
+                if (rawValue >> shift & 1) {
+                    material = nonTransparentActiveMaterial
+                 } else {
+                    material = nonTransparentInactiveMaterial;
+                 }
+                cubesVisual.children[shift].material = material;
+            }
+        } else if (selected) selected = false;
+    }
+
+    binaryRepresentationElement.addEventListener('mousemove', onMouseMove);
+    binaryRepresentationElement.addEventListener('click', onClick);
     // animation
     updateMaterials();
+    let selecting = false;
+    let selected = false;
     function animate() {
         requestAnimationFrame( animate );
 
         controls.update();
+
+        raycaster.setFromCamera( mouse, camera );
+
+        // calculate objects intersecting the picking ray
+        const intersects = raycaster.intersectObjects( cubes.children);
+        updateMaterials();
+        if (intersects.length != 0) {
+            selecting = true;
+            const {row, column} = intersects[0].object.userData;
+            for (let shift = 0; shift < 10; shift++){
+                
+                meshMatrix[row][column][shift].cube.material = intersectedMaterial;
+                intersects[0].object.material = intersectedMaterial;
+            }
+        } else {
+            selecting = false;
+        }
+            
         renderer.render( scene, camera );
-        labelRenderer.render( scene, camera );
+        labelRenderer.render( scene, camera );    
+        if (selected) {
+            renderer.render( scene, orthogonalCamera );
+            labelRenderer.render( cubesVisual, orthogonalCamera );  
+        }
+        
     }
     animate();
 }

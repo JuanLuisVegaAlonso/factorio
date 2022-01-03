@@ -3,12 +3,23 @@
     flex-wrap: wrap;
     justify-content: space-between;
 }
-
+#matrix-drawing {
+    user-select: none;
+}
 .row, .mini-row {
     display: flex;
 }
 .square {
     border: 1px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.square.active label {
+    color: white;
+}
+.square label {
+    color: #4c4c5f;
 }
 .mini-square {
     width: 10px;
