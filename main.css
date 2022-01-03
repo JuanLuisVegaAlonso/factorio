@@ -14,7 +14,7 @@
     height: 10px;
 }
 .active {
-    background-color: blue;
+    background-color: #4c4c5f;
 }
 
 .list-element {
@@ -29,10 +29,6 @@
     font-size: 48px;
 }
 
-#available-shifts span{
-    cursor: pointer;
-}
-
 #available-shifts .current {
     text-shadow: 2px 2px 8px #2BCDF3;
 }
@@ -41,6 +37,9 @@
     flex-direction: column;
     display: flex;
     align-items: center;
+}
+#available-shifts * {
+    cursor: pointer;
 }
 .mini-matrix {
     border: 1px solid;

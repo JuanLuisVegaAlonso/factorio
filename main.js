@@ -22,6 +22,14 @@ function getShiftControlId(number) {
 function getListElementId(row, column) {
     return `list-element-${row}-${column}`;
 }
+
+function getMiniMatrixId(shift) {
+    return `mini-matrix-${shift}`;
+}
+
+function getMiniSquareId(shift, row, column) {
+    return `mini-square-${shift}-${row}-${column}`;
+}
 // Matrix closure
 function createMatrix(rows, columns) {
     const matrix = [];
@@ -39,16 +47,43 @@ function createMatrix(rows, columns) {
         return (matrix[row][column] >> currentShift) % 2;
     }
 
+    function activate(row, column) {
+        if (getTranslatedValue(row, column) !== 1) {
+            matrix[row][column] = matrix[row][column] + (1 << currentShift);
+        }
+        
+        
+    }
+
+    function deactivate(row, column) {
+        if (getTranslatedValue(row, column) !== 0) {
+            matrix[row][column] = matrix[row][column] - (1 << currentShift);
+        }
+    }
+
+    function tellListeners() {
+        listeners.forEach(listener => listener());
+    }
+
     return {
         addChangeListener: listener => listeners.push(listener),
         toggle: (row, column) => {
             const currentState = (matrix[row][column] >> currentShift) % 2;
             if (currentState === 1) {
-                matrix[row][column] = matrix[row][column] - (1 << currentShift);
+                deactivate(row, column)
             } else {
-                matrix[row][column] = matrix[row][column] + (1 << currentShift);
+                activate(row, column);
             }
-            listeners.forEach(listener => listener())
+            tellListeners();
+            
+        },
+        activate: (row, column) => {
+            activate(row, column);
+            tellListeners();
+        },
+        deactivate: (row, column) => {
+            deactivate(row, column);
+            tellListeners();
         },
         getRawValue: (row, column) => matrix[row][column],
         getTranslatedValue,
@@ -122,14 +157,14 @@ function createListElement(row, column) {
 
 function createMiniMatrix(shift) {
     const miniMatrix = document.createElement('div');
-    miniMatrix.setAttribute('id', `mini-matrix-${shift}`);
+    miniMatrix.setAttribute('id', getMiniMatrixId(shift));
     miniMatrix.classList.add('mini-matrix');
     for (let row = 0; row < rows; row++) {
         const miniRow = document.createElement('div');
         miniRow.classList.add('mini-row');
         for (let column = 0; column < columns; column++) {
             const miniSquare = document.createElement('div');
-            miniSquare.setAttribute('id', `mini-square-${shift}-${row}-${column}`)
+            miniSquare.setAttribute('id', getMiniSquareId(shift, row, column))
             miniSquare.classList.add(`mini-square`);
             miniRow.appendChild(miniSquare);
         }
@@ -165,18 +200,14 @@ function redrawMiniMatrix(matrix) {
     const currentMatrix = matrix.getShiftedMatrix(matrix.getCurrentShift());
     for (let row = 0; row < rows; row++) {
         for (let column = 0; column < columns; column++) {
-            const miniSquare = document.getElementById(`mini-square-${matrix.getCurrentShift()}-${row}-${column}`);
+            const miniSquare = document.getElementById(getMiniSquareId(matrix.getCurrentShift(), row, column));
             if (currentMatrix[row][column] === 0) {
                 miniSquare.classList.remove('active');
             } else {
                 miniSquare.classList.add('active');
             }
-            
-            
         }
     }
-
-    
 }
 
 
@@ -219,6 +250,39 @@ window.onload = () => {
         document.getElementById(getShiftControlId(matrix.getCurrentShift())).classList.add('current');
     });
 
+
+    let oldId;
+    const ACTIVATE_MODE = 1;
+    const DEACTIVATE_MODE = 2;
+
+    let mouseMode;
+    matrixDrawing.addEventListener('mousemove', event => {
+        if (event.buttons != 1) return;
+        const id = event.target.getAttribute('id');
+        if (id.startsWith('square') && id !== oldId) {
+            if (!mouseMode) {
+                if (event.target.classList.contains('active')) {
+                    mouseMode = DEACTIVATE_MODE;
+                } else {
+                    mouseMode = ACTIVATE_MODE;
+                }
+            }
+            const rowColRegx = /square-([0-9])-([0-9])/g;
+            const rowCol = rowColRegx.exec(id);
+            if (mouseMode === ACTIVATE_MODE) {
+                matrix.activate(rowCol[1],rowCol[2]);
+            }
+            if (mouseMode === DEACTIVATE_MODE) {
+                matrix.deactivate(rowCol[1],rowCol[2]);
+            }
+            oldId = id;
+        }
+    });
+    matrixDrawing.addEventListener('mouseup', () => {
+        console.log('clean')
+        mouseMode = undefined;
+    })
+    document.addEventListener('mousepressed', console.log)
     
 
 }
