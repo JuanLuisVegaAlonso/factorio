@@ -290,11 +290,18 @@ window.onload = () => {
     const binaryRepresentationElement = document.getElementById('binary-representation');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color( 0xf0f0f0 );
-    const camera = new THREE.PerspectiveCamera( 75, 900 / maxHeight, 0.1, 1000 );
+    const camera = new THREE.PerspectiveCamera( 45, 900 / maxHeight, 10, 10000 );
 
-    const renderer = new THREE.WebGLRenderer();
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(900, maxHeight);
     binaryRepresentationElement.appendChild( renderer.domElement );
+
+    labelRenderer = new THREE.CSS3DRenderer({ antialias: true });
+    labelRenderer.setSize( 900, maxHeight );
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style['pointer-events'] ='none'
+    binaryRepresentationElement.appendChild( labelRenderer.domElement );
 
     const axesHelper = new THREE.AxesHelper( 5 );
     scene.add( axesHelper );
@@ -312,6 +319,7 @@ window.onload = () => {
     const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
 
     const meshMatrix = [];
+    
     for (let row = 0; row < rows; row++) {
         const meshRow = [];
         for (let column = 0; column < columns; column++) {
@@ -319,6 +327,18 @@ window.onload = () => {
             for (let shift = 0; shift < 10; shift++){
                 const cube = new THREE.Mesh( geometry, inactiveMaterial );
                 const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x000000, transparent: true, opacity: 0.2 } ) );
+                if (column === columns - 1 && row === 0) {
+                    const shiftDiv = document.createElement( 'div' );
+                    shiftDiv.className = 'shift';
+                    shiftDiv.textContent = `2^${shift}: ${2 << shift}`;
+                    shiftDiv.style.fontSize = '6px';
+                    const shiftLabel = new THREE.CSS3DObject( shiftDiv );
+                    shiftLabel.position.set( 0, 20, -5 );
+                    shiftLabel.lookAt(camera.position)
+                    shiftLabel.rotateOnWorldAxis(new THREE.Vector3(0,0,1), Math.PI/2)
+                    cube.add( shiftLabel );
+                }
+                
                 cube.position.set(cubeSize * row + 1*row, cubeSize* column + 1*column, cubeSize * shift + 1*shift)
                 line.position.set(cubeSize * row + 1*row, cubeSize* column + 1*column, cubeSize * shift + 1*shift)
                 meshColumn.push({cube, line});
@@ -363,6 +383,15 @@ window.onload = () => {
     matrix.addChangeListener(() => {
         updateMaterials();
     })
+
+
+    labelRenderer = new THREE.CSS3DRenderer();
+    labelRenderer.setSize( 900, maxHeight );
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style['pointer-events'] ='none'
+    binaryRepresentationElement.appendChild( labelRenderer.domElement );
+    
     // animation
     updateMaterials();
     function animate() {
@@ -370,6 +399,7 @@ window.onload = () => {
 
         controls.update();
         renderer.render( scene, camera );
+        labelRenderer.render( scene, camera );
     }
     animate();
 }

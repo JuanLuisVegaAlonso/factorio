@@ -45,3 +45,7 @@
 .mini-matrix {
     border: 1px solid;
 }
+
+#binary-representation {
+    position: relative;
+}
