@@ -285,4 +285,72 @@ window.onload = () => {
     document.addEventListener('mousepressed', console.log)
     
 
+
+    // Three.js
+    THREE.Object3D.DefaultUp = new THREE.Vector3(0,0,1);
+    const binaryRepresentationElement = document.getElementById('binary-representation');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color( 0xf0f0f0 );
+    const camera = new THREE.PerspectiveCamera( 75, 500 / maxHeight, 0.1, 1000 );
+
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(500, maxHeight);
+    binaryRepresentationElement.appendChild( renderer.domElement );
+
+    const axesHelper = new THREE.AxesHelper( 5 );
+    scene.add( axesHelper );
+    // geometry
+
+    const geometry = new THREE.BoxGeometry(1,1,1);
+    const inactiveMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, transparent: true, opacity: 0.1 } );
+    const activeMaterial = new THREE.MeshBasicMaterial( { color: 0x0000FF, transparent: true, opacity: 0.2 } );
+    
+    
+    const edges = new THREE.EdgesGeometry( geometry );
+    const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
+
+    const meshMatrix = [];
+    for (let row = 0; row < rows; row++) {
+        const meshRow = [];
+        for (let column = 0; column < columns; column++) {
+            meshColumn = [];
+            for (let shift = 0; shift < 10; shift++){
+                const cube = new THREE.Mesh( geometry, inactiveMaterial );
+                const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
+                cube.position.set(row, column, shift)
+                line.position.set(row, column, shift)
+                meshColumn.push({cube, line});
+                scene.add(cube);
+                //scene.add(line);
+            }
+            meshRow.push(meshColumn);
+        }
+        meshMatrix.push(meshRow)
+    }
+
+    camera.position.set( 10, 10, 15 );
+    camera.lookAt( 0, 0, 0 );
+    camera.rotateX(0);
+
+    matrix.addChangeListener(() => {
+        for (let shift = 0; shift < 10; shift++){
+            const shiftedMatrix = matrix.getShiftedMatrix(shift);
+            for (let row = 0; row < rows; row++) {
+                for (let column = 0; column < columns; column++) {
+                
+                    if (shiftedMatrix[row][column] == 0) {
+                        meshMatrix[row][column][shift].cube.material = inactiveMaterial;
+                    } else {
+                        meshMatrix[row][column][shift].cube.material = activeMaterial;
+                    }
+                }
+            }
+        }
+    })
+    // animation
+    function animate() {
+        requestAnimationFrame( animate );
+        renderer.render( scene, camera );
+    }
+    animate();
 }
