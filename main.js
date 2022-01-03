@@ -334,6 +334,8 @@ window.onload = () => {
     camera.lookAt( 0, 0, 50 );
     camera.rotateX(0);
 
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
     function updateMaterials() {
             for (let shift = 0; shift < 10; shift++){
                 const shiftedMatrix = matrix.getShiftedMatrix(shift);
@@ -365,6 +367,8 @@ window.onload = () => {
     updateMaterials();
     function animate() {
         requestAnimationFrame( animate );
+
+        controls.update();
         renderer.render( scene, camera );
     }
     animate();
