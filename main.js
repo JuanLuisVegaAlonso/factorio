@@ -172,15 +172,6 @@ function createMiniMatrix(shift) {
     return miniMatrix;
 }
 
-// Update functions
-
-function updateListElement(row, column, value) {
-    document.getElementsByTagName
-    document
-        .getElementById(getListElementId(row,column))
-        .getElementsByTagName('span')[0].innerText = value;
-}
-
 function redrawMatrix(matrix) {
     for (let row = 0; row < rows; row++) {
         for (let column = 0; column < columns; column++) {
@@ -224,25 +215,17 @@ window.onload = () => {
 
     // Matrix representation of the encoding
     const matrixDrawing = document.getElementById('matrix-drawing');
-    const listRepresentationElement = document.getElementById('list-representation');
     for (let row = 0; row < rows; row++) {
         const rowElement = createRow(row);
         rowElement.classList.add('row')
         for (let column = 0; column < columns; column++) {
             rowElement.appendChild(createSquare(matrix, row,column));
-            listRepresentationElement.appendChild(createListElement(row, column));
         }
         matrixDrawing.appendChild(rowElement);
     }
 
     // listener of changes
     matrix.addChangeListener(() => {
-        for (let row = 0; row < rows; row++) {
-            for (let column = 0; column < columns; column++) {
-                const value = matrix.getRawValue(row, column);
-                updateListElement(row, column, value)
-            }
-        }
         redrawMatrix(matrix);
         redrawMiniMatrix(matrix);
         document.getElementsByClassName('current')[0].classList.remove('current')
@@ -280,6 +263,7 @@ window.onload = () => {
     matrixDrawing.addEventListener('mousemove', handleDrawing);
     matrixDrawing.addEventListener('mousedown', handleDrawing);
     matrixDrawing.addEventListener('mouseup', () => {
+        oldId = undefined;
         mouseMode = undefined;
     })
     
