@@ -3,13 +3,13 @@
     flex-wrap: wrap;
 }
 
-.row {
+.row, .mini-row {
     display: flex;
 }
 .square {
     border: 1px solid black;
 }
-.minisquare {
+.mini-square {
     width: 10px;
     height: 10px;
 }
@@ -35,4 +35,13 @@
 
 #available-shifts .current {
     text-shadow: 2px 2px 8px #2BCDF3;
+}
+
+#available-shifts > div {
+    flex-direction: column;
+    display: flex;
+    align-items: center;
+}
+.mini-matrix {
+    border: 1px solid;
 }
