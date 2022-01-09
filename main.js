@@ -284,7 +284,7 @@ class RenderController {
         this.matrix = matrix;
         this.binaryRepresentationElement = document.getElementById('binary-representation');
         this.scene = new THREE.Scene();
-        this.camera = new THREE.OrthographicCamera( -100, 100, 100, -100, 1, 1000 );
+        this.camera = new THREE.OrthographicCamera( -150, 150, 150, -150, 1, 1000 );
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.labelRenderer = new THREE.CSS3DRenderer({ antialias: true });
@@ -411,7 +411,7 @@ class RenderController {
             const intersects = this.raycaster.intersectObjects( this.cubes.children);
             const {row, column} = intersects[0].object.userData;
 
-            this.animations.push( new SelectionAnimation(this.camera, this.meshMatrix, this.anchor, this.scene,this.cubes,  row, column));
+            this.animations.push( new SelectionAnimation(this.meshMatrix, this.anchor, this.cubes,  row, column));
             this._updateMaterials();
         } else if (this.selected) {
             this.selected = false;
@@ -450,18 +450,16 @@ class RenderController {
 
 
 class SelectionAnimation {
-    constructor(camera, meshMatrix, anchor, scene, originalParent, row, column) {
+    constructor(meshMatrix, anchor, originalParent, row, column) {
         this.row = row;
         this.column = column;
         this.meshMatrix = meshMatrix;
         this.duration = 2;
-        this.camera = camera;
         this.anchor = anchor;
-        this.scene = scene;
 
         // TODO Fix this in the future
         this.cubeSize = 10;
-        this.duration = 2;
+        this.duration = 20;
         this.upDuration = this.duration /2;
         this.translationDuration = this.duration / 2;
 
@@ -476,10 +474,9 @@ class SelectionAnimation {
         for (let shift = 0; shift < 10; shift++) {
             const minZ = (shift + 11) * this.cubeSize;
             const firstPosition = new THREE.Vector3(this.row * this.cubeSize, this.column * this.cubeSize, minZ);
-            const curve = this._calculateCurve(this.row, this.column, this.camera, shift);
+            const curve = this._calculateCurve(this.row, this.column, shift);
             const reverseInitialPosition = this.meshMatrix[this.row][this.column][shift].cube.position.clone();
             this.paths.push({firstPosition, curve, reverseInitialPosition})
-
         }
     }
 
@@ -495,16 +492,18 @@ class SelectionAnimation {
                 } else {
                     const curvePos = (this.clock.getElapsedTime() - this.upDuration) / this.translationDuration ;
                     cube.position.copy(curve.getPoint(curvePos));
+                    cube.quaternion.slerp(this.anchor.quaternion, curvePos);
                 }
             }
         } else if (!this.isFinished) {
             for (let shift = 0; shift < 10; shift++) {
-                // meshMatrix[row][col][shift].cube.setRotationFromQuaternion(camera.quaternion);
+                const quaternion = new THREE.Quaternion();
+                quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), Math.PI / 2 );
+                this.meshMatrix[this.row][this.column][shift].cube.setRotationFromQuaternion(quaternion);
                 this.meshMatrix[this.row][this.column][shift].cube.position.copy(this.anchor.worldToLocal(this.meshMatrix[this.row][this.column][shift].cube.position))
                 this.anchor.add(this.meshMatrix[this.row][this.column][shift].cube);
             }
             this.isFinished = true;
-            console.log('finished')
         }
     }
 
@@ -516,15 +515,15 @@ class SelectionAnimation {
                 if (this.clock.getElapsedTime() < this.translationDuration) {
                     const curvePos = 1 - ((this.clock.getElapsedTime()) / this.translationDuration);
                     cube.position.copy(curve.getPoint(curvePos));
+                    cube.quaternion.slerp(this.originalParent.quaternion, curvePos);
                 } else {
                     const alpha = (this.clock.getElapsedTime() - this.translationDuration) / (this.upDuration  );
                     cube.position.lerp(reverseInitialPosition, alpha);
+                    
                 }
             }
         } else if (!this.isFinished) {
             for (let shift = 0; shift < 10; shift++) {
-                // meshMatrix[row][col][shift].cube.setRotationFromQuaternion(camera.quaternion);
-                this.meshMatrix[this.row][this.column][shift].cube.position.copy(this.anchor.worldToLocal(this.meshMatrix[this.row][this.column][shift].cube.position))
                 this.originalParent.add(this.meshMatrix[this.row][this.column][shift].cube);
             }
             this.isFinished = true;
@@ -542,26 +541,25 @@ class SelectionAnimation {
         this.reversed = true;
         this.clock = new THREE.Clock();
         for (let shift = 0; shift < 10; shift++) {
-            // meshMatrix[row][col][shift].cube.setRotationFromQuaternion(camera.quaternion);
-            this.meshMatrix[this.row][this.column][shift].cube.position.copy(this.scene.worldToLocal(this.meshMatrix[this.row][this.column][shift].cube.position))
+            this.meshMatrix[this.row][this.column][shift].cube.position.copy(this.originalParent.worldToLocal(this.meshMatrix[this.row][this.column][shift].cube.position))
             this.originalParent.add(this.meshMatrix[this.row][this.column][shift].cube);
         }
     }
-    _calculateCurve(row, column, camera, shift) {
+    _calculateCurve(row, column, shift) {
             const minZ = (shift + 11) * 10;
             const initialPoint = new THREE.Vector3(row * this.cubeSize, column * this.cubeSize, minZ)
             const direction = new THREE.Vector3();
-            direction.add(this.camera.position);
+            direction.add(this.anchor.position);
             direction.sub(initialPoint);
             const firstPoint = direction.clone();
             firstPoint.setZ(0);
             firstPoint.clampLength((Math.max(rows,columns) + 1) * this.cubeSize,(Math.max(rows,columns) + 1) * this.cubeSize  );
             firstPoint.setZ(minZ);
-            const secondPoint = this.camera.position.clone();
-            const secondPointDistance = this.camera.position.length() - 10;
+            const secondPoint = this.anchor.position.clone();
+            const secondPointDistance = this.anchor.position.length() - 10;
             secondPoint.clampLength(secondPointDistance, secondPointDistance);
     
-            const finalPoint = this.camera.localToWorld(new THREE.Vector3(-15 * shift + 90, -90, -10));
+            const finalPoint = this.anchor.localToWorld(new THREE.Vector3(-15 * shift + 90, -90, -10));
     
     
             return new THREE.CubicBezierCurve3(
@@ -579,277 +577,6 @@ window.onload = () => {
     const matrixController = new MatrixController(matrix);
     matrixController.init();
     const renderController = new RenderController(matrix, maxHeight)
-
-    // Three.js
-    // THREE.Object3D.DefaultUp = new THREE.Vector3(0,0,1);
-    // const binaryRepresentationElement = document.getElementById('binary-representation');
-    // const scene = new THREE.Scene();
-    // scene.background = new THREE.Color( 0xf0f0f0 );
-    // const camera = new THREE.OrthographicCamera( -100, 100, 100, -100, 1, 1000 );
-    
-    
-    // camera.position.set( 90, 80, 150 );
-    // camera.lookAt( 0, 0, 50 );
-
-    
-
-    // const renderer = new THREE.WebGLRenderer({ antialias: true });
-    // renderer.setSize(900, maxHeight);
-    // binaryRepresentationElement.appendChild( renderer.domElement );
-
-    // const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    // controls.enableZoom = false;
-    // labelRenderer = new THREE.CSS3DRenderer({ antialias: true });
-    // labelRenderer.setSize( 900, maxHeight );
-    // labelRenderer.domElement.style.position = 'absolute';
-    // labelRenderer.domElement.style.top = '0px';
-    // labelRenderer.domElement.style['pointer-events'] ='none'
-    // binaryRepresentationElement.appendChild( labelRenderer.domElement );
-
-    // const axesHelper = new THREE.AxesHelper( 5 );
-    // scene.add( axesHelper );
-    // // geometry
-
-    // const cubeSize = 10;
-    
-    // const inactiveMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, transparent: true, depthTest: true, opacity: 0.011 } );
-    // const activeMaterial = new THREE.MeshBasicMaterial( { color: 0x0000FF, transparent: true, depthTest: true, opacity: 0.2 } );
-    // const nonTransparentInactiveMaterial = new THREE.MeshBasicMaterial( { color: 0xCAC9C9, transparent: false, opacity: 0.1 } );
-    // const nonTransparentActiveMaterial = new THREE.MeshBasicMaterial( { color: 0x0000FF, transparent: false, opacity: 0.2 } );
-    // const intersectedMaterial = new THREE.MeshBasicMaterial( { color: 0xFF00FF, transparent: false, opacity: 0.2 } );
-    
-    
-    // const meshMatrix = [];
-    // const cubes = new THREE.Group();
-    
-    // for (let row = 0; row < rows; row++) {
-    //     const meshRow = [];
-    //     for (let column = 0; column < columns; column++) {
-    //         meshColumn = [];
-    //         for (let shift = 0; shift < 10; shift++){
-    //             const geometry = new THREE.BoxGeometry(cubeSize,cubeSize,cubeSize);
-    //             const cube = new THREE.Mesh( geometry, inactiveMaterial );
-    //             const edges = new THREE.EdgesGeometry( geometry );
-    //             const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x000000, transparent: true, opacity: 0.2 } ) );
-    //             // if (column === columns - 1 && row === 0) {
-    //             //     const shiftDiv = document.createElement( 'div' );
-    //             //     shiftDiv.className = 'shift';
-    //             //     shiftDiv.textContent = `2^${shift}: ${2 << shift}`;
-    //             //     shiftDiv.style.fontSize = '6px';
-    //             //     const shiftLabel = new THREE.CSS3DObject( shiftDiv );
-    //             //     shiftLabel.position.set( 0, 20, -5 );
-    //             //     shiftLabel.lookAt(camera.position)
-    //             //     shiftLabel.rotateOnWorldAxis(new THREE.Vector3(0,0,1), Math.PI/2)
-    //             //     cube.add( shiftLabel );
-                    
-    //             // }
-                
-    //             cube.position.set(cubeSize * row + 1*row, cubeSize* column + 1*column, cubeSize * shift + 1*shift);
-    //             cube.userData.row = row;
-    //             cube.userData.column = column;
-    //             line.position.set(cubeSize * row + 1*row, cubeSize* column + 1*column, cubeSize * shift + 1*shift);
-    //             cubes.add(cube);
-                
-    //             meshColumn.push({cube, line});
-    //             scene.add(line);
-    //         }
-    //         meshRow.push(meshColumn);
-    //     }
-    //     meshMatrix.push(meshRow)
-    // }
-    // scene.add(cubes);
-    
-
-    // function updateMaterials() {
-    //         for (let shift = 0; shift < 10; shift++){
-    //             const shiftedMatrix = matrix.getShiftedMatrix(shift);
-    //             for (let row = 0; row < rows; row++) {
-    //                 for (let column = 0; column < columns; column++) {
-    //                     let material;
-
-    //                     if (shift > matrix.getCurrentShift()) {
-                            
-    //                         if (shiftedMatrix[row][column] == 0) {
-    //                             material = inactiveMaterial;
-    //                         } else {
-    //                            material = activeMaterial;
-    //                         }
-    //                     } else {
-    //                         if (shiftedMatrix[row][column] == 0) {
-    //                            material = nonTransparentInactiveMaterial;
-    //                         } else {
-    //                            material = nonTransparentActiveMaterial;
-    //                         }
-    //                     }
-    //                     meshMatrix[row][column][shift].cube.material = material;
-    //                 }
-    //             }
-    //         }
-    // }
-    // matrix.addChangeListener(() => {
-    //     updateMaterials();
-    // })
-
-    // const raycaster = new THREE.Raycaster();
-    // const mouse = new THREE.Vector2(200,200);
-
-    // function onMouseMove( event ) {
-
-    //     // calculate mouse position in normalized device coordinates
-    //     // (-1 to +1) for both components
-    //     const {x,y, width, height} = renderer.domElement.getBoundingClientRect();
-    //     mouse.x = ( (event.clientX  -x ) /  width)  * 2 - 1;
-    //     mouse.y = - (( event.clientY - y) /  height)  * 2 + 1;
-
-
-    // }
-    // const anchor = new THREE.Object3D();
-
-    
-    // scene.add(anchor);
-
-    // function calculateCurve(row, column, camera, shift) {
-    //     const minZ = (shift + 11) * 10;
-    //     const initialPoint = new THREE.Vector3(row * cubeSize, column * cubeSize, minZ)
-    //     const direction = new THREE.Vector3();
-    //     direction.add(camera.position);
-    //     direction.sub(initialPoint);
-    //     const firstPoint = direction.clone();
-    //     firstPoint.setZ(0);
-    //     firstPoint.clampLength((Math.max(rows,columns) + 1) * cubeSize,(Math.max(rows,columns) + 1) * cubeSize  );
-    //     firstPoint.setZ(minZ);
-    //     const secondPoint = camera.position.clone();
-    //     const secondPointDistance = camera.position.length() - 10;
-    //     secondPoint.clampLength(secondPointDistance, secondPointDistance);
-
-    //     const finalPoint = camera.localToWorld(new THREE.Vector3(-15 * shift + 90, -90, -10));
-
-
-    //     return new THREE.CubicBezierCurve3(
-    //         initialPoint,
-    //         firstPoint,
-    //         secondPoint,
-    //         finalPoint
-    //     );
-    // }
-
-
-    // function selectionAnimation(row, col) {
-    //     const duration = 2;
-
-    //     const upDuration = duration /2;
-    //     const translationDuration = duration / 2;
-
-
-    //     let isFinished = false;
-    //     let reversed = false;
-
-    //     let clock = new THREE.Clock();
-
-    //     const paths = [];
-    //     for (let shift = 0; shift < 10; shift++) {
-    //         const minZ = (shift + 11) * cubeSize;
-    //         const firstPosition = new THREE.Vector3(row * cubeSize, col * cubeSize, minZ);
-    //         const curve = calculateCurve(row, col, camera, shift);
-    //         const reverseInitialPosition = meshMatrix[row][col][shift].cube.position.clone();
-    //         paths.push({firstPosition, curve, reverseInitialPosition})
-
-    //     }
-
-
-    //     function forward() {
-    //         if (clock.getElapsedTime() < duration) {
-    //             for (let shift = 0; shift < 10; shift++) {
-    //                 const {curve, firstPosition} = paths[shift];
-    //                 const cube = meshMatrix[row][col][shift].cube;
-    //                 if (clock.getElapsedTime() < upDuration) {
-    //                     const alpha = clock.getElapsedTime() / upDuration ;
-    //                     cube.position.lerp(firstPosition, alpha);
-    //                 } else {
-    //                     const curvePos = (clock.getElapsedTime() - upDuration) / translationDuration ;
-    //                     cube.position.copy(curve.getPoint(curvePos));
-    //                 }
-    //             }
-    //         } else if (!isFinished) {
-    //             for (let shift = 0; shift < 10; shift++) {
-    //                 // meshMatrix[row][col][shift].cube.setRotationFromQuaternion(camera.quaternion);
-    //                 meshMatrix[row][col][shift].cube.position.copy(anchor.worldToLocal(meshMatrix[row][col][shift].cube.position))
-    //                 anchor.add(meshMatrix[row][col][shift].cube);
-    //             }
-    //             isFinished = true;
-    //         }
-    //     }
-
-    //     function backwards() {
-    //         if (clock.getElapsedTime() < duration) {
-    //             for (let shift = 0; shift < 10; shift++) {
-    //                 const {curve, reverseInitialPosition} = paths[shift];
-    //                 const cube = meshMatrix[row][col][shift].cube;
-    //                 if (clock.getElapsedTime() < translationDuration) {
-    //                     const curvePos = 1 - ((clock.getElapsedTime()) / translationDuration);
-    //                     cube.position.copy(curve.getPoint(curvePos));
-    //                 } else {
-    //                     const alpha = (clock.getElapsedTime() - translationDuration) / (upDuration  );
-    //                     cube.position.lerp(reverseInitialPosition, alpha);
-    //                 }
-    //             }
-    //         } else if (!isFinished) {
-    //             for (let shift = 0; shift < 10; shift++) {
-    //                 // meshMatrix[row][col][shift].cube.setRotationFromQuaternion(camera.quaternion);
-    //                 meshMatrix[row][col][shift].cube.position.copy(anchor.worldToLocal(meshMatrix[row][col][shift].cube.position))
-    //                 cubes.add(meshMatrix[row][col][shift].cube);
-    //             }
-    //             isFinished = true;
-    //         }
-    //     }
-
-    //     function tick() {
-    //         if (!reversed) {
-    //             forward();
-    //         } else {
-    //             backwards();
-    //         }
-
-    //     }
-
-    //     function reverse() {
-    //         reversed = true;
-    //         clock = new THREE.Clock();
-    //         for (let shift = 0; shift < 10; shift++) {
-    //             // meshMatrix[row][col][shift].cube.setRotationFromQuaternion(camera.quaternion);
-    //             meshMatrix[row][col][shift].cube.position.copy(scene.worldToLocal(meshMatrix[row][col][shift].cube.position))
-    //             cubes.add(meshMatrix[row][col][shift].cube);
-    //         }
-    //     }
-    //     return {tick, reverse}
-
-    // }
-
-    // let animation;
-   
-    // function onClick(event) {
-    //     if (selecting) {
-    //         selected = true;
-    //         const intersects = raycaster.intersectObjects( cubes.children);
-    //         const {row, column} = intersects[0].object.userData;
-
-    //         animation = selectionAnimation(row, column);
-    //         updateMaterials();
-    //     } else if (selected) {
-    //         selected = false;
-    //         animation.reverse();
-    //     }
-    // }
-
-    
-
-    // binaryRepresentationElement.addEventListener('mousemove', onMouseMove);
-    // binaryRepresentationElement.addEventListener('click', onClick);
-    // // animation
-    // updateMaterials();
-    // let selecting = false;
-    // let selected = false;
-    
 
     // Scene for debugging
 
