@@ -142,7 +142,7 @@ class MatrixController {
         squareElement.setAttribute('id', getSquareId(row, column));
         squareElement.classList.add('square');
         const ratio = maxHeight / rows;
-        squareElement.style = `width: ${ratio}px; height: ${ratio}px; margin: ${ratio * spaceBetween}px`;
+        squareElement.style = `width: ${ratio}px; height: ${ratio}px;`;
         const labelElement = document.createElement('label');
         labelElement.innerText = 0;
         squareElement.appendChild(labelElement);
@@ -296,10 +296,10 @@ class RenderController {
         this.animations = [];
 
         this.inactiveMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, transparent: true, depthTest: true, opacity: 0.011 } );
-        this.activeMaterial = new THREE.MeshBasicMaterial( { color: 0x0000FF, transparent: true, depthTest: true, opacity: 0.2 } );
+        this.activeMaterial = new THREE.MeshBasicMaterial( { color: 0x4c4c5f, transparent: true, depthTest: true, opacity: 0.2 } );
         this.nonTransparentInactiveMaterial = new THREE.MeshBasicMaterial( { color: 0xCAC9C9, transparent: false, opacity: 0.1 } );
-        this.nonTransparentActiveMaterial = new THREE.MeshBasicMaterial( { color: 0x0000FF, transparent: false, opacity: 0.2 } );
-        this.intersectedMaterial = new THREE.MeshBasicMaterial( { color: 0xFF00FF, transparent: false, opacity: 0.2 } );
+        this.nonTransparentActiveMaterial = new THREE.MeshBasicMaterial( { color: 0x4c4c5f, transparent: false, opacity: 0.2 } );
+        this.intersectedMaterial = new THREE.MeshBasicMaterial( { color: 0x101A2C, transparent: false, opacity: 0.2 } );
 
 
         this.scene.background = new THREE.Color( 0xf0f0f0 );
@@ -459,7 +459,7 @@ class SelectionAnimation {
 
         // TODO Fix this in the future
         this.cubeSize = 10;
-        this.duration = 20;
+        this.duration = 2;
         this.upDuration = this.duration /2;
         this.translationDuration = this.duration / 2;
 
@@ -580,14 +580,14 @@ window.onload = () => {
 
     // Scene for debugging
 
-    const debuggingWidth = 300;
-    const debuggingHeight = 300;
-    const debuggingCamera = new THREE.OrthographicCamera( -100, 100, 100, -100, 1, 10000 );
-    debuggingCamera.position.set( -300, 900, 950 );
-    debuggingCamera.lookAt(50,50,50);
-    const debuggingRenderer = new THREE.WebGLRenderer({ antialias: true });
-    debuggingRenderer.setSize(debuggingWidth, debuggingHeight);
-    document.getElementById('binary-representation').appendChild(debuggingRenderer.domElement);
+    // const debuggingWidth = 300;
+    // const debuggingHeight = 300;
+    // const debuggingCamera = new THREE.OrthographicCamera( -100, 100, 100, -100, 1, 10000 );
+    // debuggingCamera.position.set( -300, 900, 950 );
+    // debuggingCamera.lookAt(50,50,50);
+    // const debuggingRenderer = new THREE.WebGLRenderer({ antialias: true });
+    // debuggingRenderer.setSize(debuggingWidth, debuggingHeight);
+    // document.getElementById('binary-representation').appendChild(debuggingRenderer.domElement);
 
     
 
@@ -597,7 +597,7 @@ window.onload = () => {
 
         
         // debugging
-        debuggingRenderer.render(renderController.scene, debuggingCamera);
+        // debuggingRenderer.render(renderController.scene, debuggingCamera);
     }
     animate();
 }

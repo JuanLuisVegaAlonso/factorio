@@ -5,12 +5,13 @@
 }
 #matrix-drawing {
     user-select: none;
+    border: 1px solid black;
+    height: fit-content;
 }
 .row, .mini-row {
     display: flex;
 }
 .square {
-    border: 1px solid black;
     display: flex;
     justify-content: center;
     align-items: center;
