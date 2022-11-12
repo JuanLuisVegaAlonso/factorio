@@ -1,0 +1,68 @@
+#general-info {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+#matrix-drawing {
+    user-select: none;
+    border: 1px solid black;
+    height: fit-content;
+}
+.row, .mini-row {
+    display: flex;
+}
+.square {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.square.active label {
+    color: white;
+}
+.square label {
+    color: #4c4c5f;
+}
+.mini-square {
+    width: 10px;
+    height: 10px;
+}
+.active {
+    background-color: #4c4c5f;
+}
+
+.list-element {
+ display: flex;
+}
+.list-element label {
+    font-weight: 800;
+}
+#available-shifts {
+    display: flex;
+    justify-content: space-between;
+    font-size: 48px;
+}
+
+#available-shifts .current {
+    text-shadow: 2px 2px 8px #2BCDF3;
+}
+
+#available-shifts > div {
+    flex-direction: column;
+    display: flex;
+    align-items: center;
+}
+#available-shifts * {
+    cursor: pointer;
+}
+.mini-matrix {
+    border: 1px solid;
+}
+
+#binary-representation {
+    position: relative;
+}
+
+#segmented-display-controller {
+    outline: 1px solid black;
+    flex: 1;
+}

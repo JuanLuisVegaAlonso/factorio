@@ -1,0 +1,23 @@
+{
+  "name": "jlv-factorio-light-encoding",
+  "version": "0.0.1",
+  "description": "Factorio light bit-shift based encoding tool",
+  "scripts": {
+    "start": "parcel serve src/index.html --port=4200",
+    "build": "parcel build"
+  },
+  "devDependencies": {
+    "@types/three": "^0.136.1",
+    "parcel": "latest"
+  },
+  "keywords": [
+    "factorio"
+  ],
+  "author": "Juan Luis Vega",
+  "license": "MIT",
+  "source": "src/index.html",
+  "dependencies": {
+    "@jensforstmann/factorio-blueprint-tools": "^1.2.7",
+    "three": "^0.136.0"
+  }
+}
