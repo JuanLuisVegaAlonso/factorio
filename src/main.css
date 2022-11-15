@@ -7,6 +7,9 @@
     user-select: none;
     border: 1px solid black;
     height: fit-content;
+    flex: 1;
+    grid-area: matrixDrawing;
+    margin: auto;
 }
 .row, .mini-row {
     display: flex;
@@ -15,12 +18,16 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    min-width: 40px;
 }
 .square.active label {
     color: white;
 }
 .square label {
     color: #4c4c5f;
+    pointer-events: none;
 }
 .mini-square {
     width: 10px;
@@ -66,3 +73,60 @@
     outline: 1px solid black;
     flex: 1;
 }
+
+#matrix-container {
+    display: grid;
+    max-height: 800px;
+    grid-template-columns: 25px auto;
+    grid-template-rows: 25px auto;
+    grid-template-areas:
+    "none sliderColumns"
+    "sliderRows matrixDrawing" ;
+}
+#slider-columns {
+    grid-area: sliderColumns;
+}
+
+#slider-rows {
+    grid-area: sliderRows;
+}
+#matrix-size-overlay {
+    grid-area: matrixDrawing;
+    background-color: rgba(255,255,255,0.8);
+    justify-content: center;
+    align-content: center;
+    display: flex;
+}
+
+.hidden {
+    display:  none !important;
+}
+
+#matrix-size-overlay > span:nth-child(1) {
+    align-items: center;
+    display: flex;
+}
+.exponential-label {
+    font-size: small;
+}
+
+nav {
+    display: flex;
+    width: 100%;
+}
+
+nav ul,li {
+    text-decoration: none;
+    list-style: none;
+    display: flex;
+    justify-content: space-around;
+    display: flex;
+    width: 100%;
+    min-height: 40px;
+    align-items: center;
+}
+
+nav li {
+    cursor: pointer;
+}
+

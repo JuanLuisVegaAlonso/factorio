@@ -11,18 +11,27 @@
 <body>
     <main>
         <h1>Factorio light encoder</h1>
+        <nav>
+            <ul>
+                <li  data-navigation="matrixDrawing">Matrix drawing</li>
+                <li  data-navigation="factorioExporter">Factorio exporter</li>
+            </ul>
+        </nav>
         <h2 id="current-shift"></h2>
         <div id="available-shifts">
 
         </div>
         <div id="general-info">
-            <section id="control-container"></section>
-            <section id="matrix-drawing" ondragstart="return false;"></section>
-            <section id="binary-representation">
+            <section id="matrix-container" data-navigation="matrixDrawing">
+                <div id="matrix-drawing" ondragstart="return false;"></div>
+                <div id="matrix-size-overlay" class="hidden"></div>
+            </section>
+            
+            <section id="binary-representation" data-navigation="matrixDrawing">
             
             </section>
-            <section id="segmented-display-controller"></section>
-            <section id="tools"></section>
+            <section id="segmented-display-controller" data-navigation="factorioExporter"></section>
+            <section id="tools" data-navigation="factorioExporter"></section>
         </div>
         
     </main>

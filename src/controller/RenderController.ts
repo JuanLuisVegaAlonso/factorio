@@ -47,14 +47,16 @@ export class RenderController {
         this.anchor = new Object3D();
         this.animations = [];
 
+        const reverseCamera = this.camera.position.clone().multiplyScalar(-1);
         for (let i = 0; i < 10; i++) {
             const elem = document.createElement('span');
+            elem.classList.add("exponential-label")
             elem.innerHTML = `2<sup>${i}</sup>`;
             const object = new CSS3DObject(elem);
             this.labels.push(object);
             this.scene.add(object)
             object.position.set(this.cubeSize * (matrix.rows + 1) + 10, this.cubeSize * matrix.columns + 10, this.cubeSize * (i));
-            object.lookAt(this.camera.position)
+            object.lookAt(reverseCamera)
         }
 
         this.inactiveMaterial = new MeshBasicMaterial( { color: 0x000000, transparent: true, depthTest: true, opacity: 0.011 } );
@@ -192,6 +194,11 @@ export class RenderController {
         this.anchor.position.set(x,y,z);
         this.anchor.setRotationFromQuaternion(this.camera.quaternion);
         this.raycaster.setFromCamera( this.mouse, this.camera );
+
+        const reverseCamera = this.camera.position.clone().multiplyScalar(-1);
+        for (const label of this.labels) {
+            label.lookAt(reverseCamera);
+        }
 
         // calculate objects intersecting the picking ray
         if (!this.selected) {

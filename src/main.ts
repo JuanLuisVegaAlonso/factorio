@@ -12,11 +12,34 @@ let columns = 5;
 const maxHeight = 600;
 
 
+export function changeView(elem: HTMLElement) {
+    const navigationData = elem.getAttribute("data-navigation")!;
+    const sections = document.getElementsByTagName("section");
+    for (let i = 0; i < sections.length; i++) {
+        const section = sections[i];
+        const navigationDataSection = section.getAttribute("data-navigation")!;
+        if (navigationData === navigationDataSection) {
+            section.classList.remove("hidden");
+        } else {
+            section.classList.add("hidden");
+        }
+        
+    }
+}
 
 
 
 window.onload = () => {
-    
+
+
+    //navigation
+    const nav = document.getElementsByTagName('nav')[0]!;
+    const navEntries = nav.getElementsByTagName('li');
+    for (let i = 0; i < navEntries.length; i++) {
+        const navEntry = navEntries[i];
+        navEntry.addEventListener('click',()=>changeView(navEntry))
+    }
+    changeView(navEntries[0])
     const matrix = new Matrix(rows, columns, 10, allItems.length);
     const matrixController = new MatrixController(matrix, maxHeight);
     matrixController.init();

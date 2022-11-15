@@ -5,7 +5,9 @@ export class MatrixController {
     public static ACTIVATE_MODE = 1;
     public static DEACTIVATE_MODE = 2;
 
+    private matrixContainer: HTMLElement;
     private matrixDrawing: HTMLElement | void;
+    private matrixSizeOverlay: HTMLElement;
     private oldId: number | void;
     private mouseMode: number | void;
     
@@ -25,10 +27,6 @@ export class MatrixController {
         const squareElement = document.createElement('div');
         squareElement.setAttribute('id', getSquareId(row, column));
         squareElement.classList.add('square');
-        const {rows} = this.matrix;
-        const ratio = this.maxHeight / rows;
-        squareElement.style.width = `${ratio}px`;
-        squareElement.style.height = `${ratio}px`;
         const labelElement = document.createElement('label');
         labelElement.innerText = '0';
         squareElement.appendChild(labelElement);
@@ -126,20 +124,23 @@ export class MatrixController {
 
     createControls() {
 
-        const controlContainer = document.getElementById('control-container')!;
         
         const sliderRows = document.createElement('input');
         sliderRows.type = 'range';
         sliderRows.min = 1 + "";
         sliderRows.max = this.matrix.maxNumberOfCells + "";
-        controlContainer.appendChild(sliderRows);
+        sliderRows.setAttribute("id", "slider-rows");
+        sliderRows.setAttribute("orient", "vertical");
+        
+        this.matrixContainer.appendChild(sliderRows);
         
 
         const sliderColumns = document.createElement('input');
         sliderColumns.type = 'range';
         sliderColumns.min = 1 + "";
         sliderColumns.max = this.matrix.maxNumberOfCells + "";
-        controlContainer.appendChild(sliderColumns);
+        sliderColumns.setAttribute("id", "slider-columns");
+        this.matrixContainer.appendChild(sliderColumns);
 
        
         sliderRows.addEventListener('input', () => this.handleNumberOfRowsInput(sliderRows, sliderColumns));
@@ -147,6 +148,9 @@ export class MatrixController {
 
         sliderRows.addEventListener('change', () => this.handleNumberOfRowsOrColsChange(sliderRows, sliderColumns));
         sliderColumns.addEventListener('change', () => this.handleNumberOfRowsOrColsChange(sliderRows, sliderColumns));
+
+        sliderRows.value = this.matrix.rows + "";
+        sliderColumns.value = this.matrix.columns + "";
 
         const button = document.createElement('button');
         button.innerText = "Change size to 8x8";
@@ -164,6 +168,7 @@ export class MatrixController {
         if (cols > maxCols) {
             sliderColumns.value = maxCols + "";
         }
+        this.updateMatrixSizeOverlay(rows, cols);
     }
     private handleNumberOfColsInput(sliderRows: HTMLInputElement, sliderColumns: HTMLInputElement) {
         const rows = Number(sliderRows.value);
@@ -174,12 +179,20 @@ export class MatrixController {
         if (rows > maxRows) {
             sliderRows.value = maxRows + "";
         }
+        this.updateMatrixSizeOverlay(rows, cols);
+    }
+
+    private updateMatrixSizeOverlay(rows: number, columns: number) {
+        this.matrixSizeOverlay.classList.remove("hidden");
+        this.matrixSizeOverlay.innerHTML = `<span>${rows}x${columns}`;
+        
     }
 
     private handleNumberOfRowsOrColsChange(sliderRows: HTMLInputElement, sliderColumns: HTMLInputElement) {
         const rows = Number(sliderRows.value);
         const cols = Number(sliderColumns.value);
         this.matrix.changeMatrixSize(rows, cols);
+        this.matrixSizeOverlay.classList.add("hidden");
         
     }
 
@@ -207,6 +220,8 @@ export class MatrixController {
      }
 
     init() {
+        this.matrixContainer = document.getElementById('matrix-container')!;
+        this.matrixSizeOverlay = document.getElementById('matrix-size-overlay')!;
         this.createControls();
         this.createAllShiftControls();
         this.createMatrix();
