@@ -1,7 +1,8 @@
-import { BoxGeometry, Color, EdgesGeometry, Group, LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, Object3D, OrthographicCamera, Raycaster, Scene, Vector2, Vector3, WebGLRenderer } from 'three';
+import { BoxGeometry, Color, EdgesGeometry, Group, LineBasicMaterial, LineSegments,  Mesh, MeshBasicMaterial, Object3D, OrthographicCamera, Raycaster, Scene, Vector2, Vector3, WebGLRenderer } from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
-import {CSS3DRenderer} from 'three/examples/jsm/renderers/CSS3DRenderer';
+import {CSS3DObject, CSS3DRenderer} from 'three/examples/jsm/renderers/CSS3DRenderer';
 import { SelectionAnimation } from '../animation/selectionAnimation';
+import { Matrix, MatrixEvents } from '../data/matrix';
 
 export class RenderController {
     private binaryRepresentationElement: HTMLElement;
@@ -20,15 +21,17 @@ export class RenderController {
     private nonTransparentInactiveMaterial: MeshBasicMaterial;
     private nonTransparentActiveMaterial: MeshBasicMaterial;
     private intersectedMaterial: MeshBasicMaterial;
+    private labels: CSS3DObject[] = [];
 
     private selecting: boolean;
     private selected: boolean;
 
     private raycaster: Raycaster;
     private mouse: Vector2;
+    private lines: Group;
 
 
-    constructor(public matrix,public maxHeight) {
+    constructor(public matrix: Matrix,public maxHeight) {
         Object3D.DefaultUp = new Vector3(0,0,1);
         this.binaryRepresentationElement = document.getElementById('binary-representation')!;
         this.scene = new Scene();
@@ -39,9 +42,20 @@ export class RenderController {
         this.maxHeight = maxHeight;
         this.cubeSize = 10;
         this.meshMatrix = [];
+        this.lines = new Group();
         this.cubes = new Group();
         this.anchor = new Object3D();
         this.animations = [];
+
+        for (let i = 0; i < 10; i++) {
+            const elem = document.createElement('span');
+            elem.innerHTML = `2<sup>${i}</sup>`;
+            const object = new CSS3DObject(elem);
+            this.labels.push(object);
+            this.scene.add(object)
+            object.position.set(this.cubeSize * (matrix.rows + 1) + 10, this.cubeSize * matrix.columns + 10, this.cubeSize * (i));
+            object.lookAt(this.camera.position)
+        }
 
         this.inactiveMaterial = new MeshBasicMaterial( { color: 0x000000, transparent: true, depthTest: true, opacity: 0.011 } );
         this.activeMaterial = new MeshBasicMaterial( { color: 0x4c4c5f, transparent: true, depthTest: true, opacity: 0.2 } );
@@ -73,7 +87,10 @@ export class RenderController {
         this.binaryRepresentationElement.addEventListener('click', () => this.onClick());
         this.buildCubes();
 
-        this.matrix.addChangeListener(() => {
+        this.matrix.addChangeListener((eventType?: MatrixEvents) => {
+            if (eventType && eventType === MatrixEvents.SIZE_CHANGED) {
+                this.buildCubes();
+            }
             this.updateMaterials();
         });
 
@@ -98,6 +115,11 @@ export class RenderController {
 
     private buildCubes() {
         const {rows, columns} = this.matrix;
+        this.scene.remove(this.cubes);
+        this.scene.remove(this.lines);
+        this.cubes = new Group();
+        this.lines = new Group();
+        this.meshMatrix = [];
         for (let row = 0; row < rows; row++) {
             const meshRow = [] as any[];
             for (let column = 0; column < columns; column++) {
@@ -114,12 +136,13 @@ export class RenderController {
                     this.cubes.add(cube);
                     
                     meshColumn.push({cube, line});
-                    this.scene.add(line);
+                    this.lines.add(line);
                 }
                 meshRow.push(meshColumn);
             }
             this.meshMatrix.push(meshRow)
         }
+        this.scene.add(this.lines);
         this.scene.add(this.cubes);
     }
 

@@ -5,7 +5,7 @@ import { Matrix } from './data/matrix';
 import { MatrixController } from './controller/MatrixController';
 import { RenderController } from './controller/RenderController';
 import { FactorioDataViewerController } from './controller/FactorioDataViewerController';
-import { segmentedDisplay } from './data/baseInfo';
+import { allItems, segmentedDisplay } from './data/baseInfo';
 import { ToolsController } from './controller/ToolsController';
 let rows = 7;
 let columns = 5;
@@ -17,7 +17,7 @@ const maxHeight = 600;
 
 window.onload = () => {
     
-    const matrix = new Matrix(rows, columns);
+    const matrix = new Matrix(rows, columns, 10, allItems.length);
     const matrixController = new MatrixController(matrix, maxHeight);
     matrixController.init();
     const renderController = new RenderController(matrix, maxHeight)

@@ -1,4 +1,4 @@
-import { Matrix } from "../data/matrix";
+import { Matrix, MatrixEvents } from "../data/matrix";
 import { getMiniMatrixId, getMiniSquareId, getRowId, getShiftControlId, getSquareId } from "../utils";
 
 export class MatrixController {
@@ -84,29 +84,34 @@ export class MatrixController {
     }
 
     redrawMiniMatrix() {
-        const currentMatrix = this.matrix.getShiftedMatrix(this.matrix.getCurrentShift());
-        const {rows, columns} = this.matrix;
-        for (let row = 0; row < rows; row++) {
-            for (let column = 0; column < columns; column++) {
-                const miniSquare = document.getElementById(getMiniSquareId(this.matrix.getCurrentShift(), row, column));
-                if (currentMatrix[row][column] === 0) {
-                    miniSquare!.classList.remove('active');
-                } else {
-                    miniSquare!.classList.add('active');
+        for(let i = 0; i < this.matrix.maxShifts; i++) {
+            const currentMatrix = this.matrix.getShiftedMatrix(i);
+            const {rows, columns} = this.matrix;
+            for (let row = 0; row < rows; row++) {
+                for (let column = 0; column < columns; column++) {
+                    const miniSquare = document.getElementById(getMiniSquareId(i, row, column));
+                    if (currentMatrix[row][column] === 0) {
+                        miniSquare!.classList.remove('active');
+                    } else {
+                        miniSquare!.classList.add('active');
+                    }
                 }
             }
         }
+        
     }
     createAllShiftControls() {
-        const availableShiftsElement = document.getElementById('available-shifts');
-        for(let number = 0; number < 10; number++) {
-            availableShiftsElement!.appendChild(this.createShiftControl(number));
+        const availableShiftsElement = document.getElementById('available-shifts')!;
+        availableShiftsElement.innerHTML = "";
+        for(let number = 0; number < this.matrix.maxShifts; number++) {
+            availableShiftsElement.appendChild(this.createShiftControl(number));
         }
         document.getElementById(getShiftControlId(this.matrix.getCurrentShift()))!.classList.add('current');
     }
 
     createMatrix() {
-        const matrixDrawing = document.getElementById('matrix-drawing');
+        const matrixDrawing = document.getElementById('matrix-drawing')!;
+        matrixDrawing.innerHTML = "";
         const {rows, columns} = this.matrix;
         for (let row = 0; row < rows; row++) {
             const rowElement = this.createRow(row);
@@ -117,7 +122,65 @@ export class MatrixController {
         matrixDrawing!.appendChild(rowElement);
         }
         this.matrixDrawing = matrixDrawing!;
+    }
 
+    createControls() {
+
+        const controlContainer = document.getElementById('control-container')!;
+        
+        const sliderRows = document.createElement('input');
+        sliderRows.type = 'range';
+        sliderRows.min = 1 + "";
+        sliderRows.max = this.matrix.maxNumberOfCells + "";
+        controlContainer.appendChild(sliderRows);
+        
+
+        const sliderColumns = document.createElement('input');
+        sliderColumns.type = 'range';
+        sliderColumns.min = 1 + "";
+        sliderColumns.max = this.matrix.maxNumberOfCells + "";
+        controlContainer.appendChild(sliderColumns);
+
+       
+        sliderRows.addEventListener('input', () => this.handleNumberOfRowsInput(sliderRows, sliderColumns));
+        sliderColumns.addEventListener('input', () => this.handleNumberOfColsInput(sliderRows, sliderColumns));
+
+        sliderRows.addEventListener('change', () => this.handleNumberOfRowsOrColsChange(sliderRows, sliderColumns));
+        sliderColumns.addEventListener('change', () => this.handleNumberOfRowsOrColsChange(sliderRows, sliderColumns));
+
+        const button = document.createElement('button');
+        button.innerText = "Change size to 8x8";
+        button.onclick =() => {
+            this.matrix.changeMatrixSize(8,8);
+        };
+    }
+
+
+    private handleNumberOfRowsInput(sliderRows: HTMLInputElement, sliderColumns: HTMLInputElement) {
+        const rows = Number(sliderRows.value);
+        const cols = Number(sliderColumns.value);
+        const maxCols = Math.floor(this.matrix.maxNumberOfCells / rows);
+        sliderColumns.max =  maxCols + "";
+        if (cols > maxCols) {
+            sliderColumns.value = maxCols + "";
+        }
+    }
+    private handleNumberOfColsInput(sliderRows: HTMLInputElement, sliderColumns: HTMLInputElement) {
+        const rows = Number(sliderRows.value);
+        const cols = Number(sliderColumns.value);
+        const maxRows = Math.floor(this.matrix.maxNumberOfCells / cols);
+        sliderRows.max =  maxRows + "";
+            
+        if (rows > maxRows) {
+            sliderRows.value = maxRows + "";
+        }
+    }
+
+    private handleNumberOfRowsOrColsChange(sliderRows: HTMLInputElement, sliderColumns: HTMLInputElement) {
+        const rows = Number(sliderRows.value);
+        const cols = Number(sliderColumns.value);
+        this.matrix.changeMatrixSize(rows, cols);
+        
     }
 
     private handleDrawing(event) {
@@ -131,28 +194,35 @@ export class MatrixController {
                      this.mouseMode = MatrixController.ACTIVATE_MODE;
                  }
              }
-             const rowColRegx = /square-([0-9])-([0-9])/g;
+             const rowColRegx = /square-([0-9]+)-([0-9]+)*/g;
              const rowCol = rowColRegx.exec(id);
              if (this.mouseMode === MatrixController.ACTIVATE_MODE) {
-                 this.matrix.activate(rowCol![1],rowCol![2]);
+                 this.matrix.activate(Number(rowCol![1]),Number(rowCol![2]));
              }
              if (this.mouseMode === MatrixController.DEACTIVATE_MODE) {
-                this.matrix.deactivate(rowCol![1],rowCol![2]);
+                this.matrix.deactivate(Number(rowCol![1]),Number(rowCol![2]));
              }
              this.oldId = id;
          }
      }
 
     init() {
+        this.createControls();
         this.createAllShiftControls();
         this.createMatrix();
+        
     
         // listener of changes
-        this.matrix.addChangeListener(() => {
+        this.matrix.addChangeListener((eventType?: MatrixEvents) => {
+            if (eventType && eventType === MatrixEvents.SIZE_CHANGED) {
+                this.createMatrix();
+                this.createAllShiftControls();
+            }
             this.redrawMatrix();
             this.redrawMiniMatrix();
             document.getElementsByClassName('current')[0].classList.remove('current')
             document.getElementById(getShiftControlId(this.matrix.getCurrentShift()))!.classList.add('current');
+            
         });
     
         

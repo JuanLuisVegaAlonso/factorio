@@ -89,7 +89,6 @@ export class FactorioDataViewerController {
                         const other = copiedEntities.find(a => a.entity_number == red.entity_id)!;
                         const otherPos = mapPosition(other);
                         this.ctx.lineTo(otherPos.x +this.entitySize*xRatio, otherPos.y);
-                        console.log("from: ",x,y,"to: ", otherPos)
                     }
                     this.ctx.stroke();
                 }
