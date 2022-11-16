@@ -124,7 +124,6 @@ export class MatrixController {
 
     createControls() {
 
-        
         const sliderRows = document.createElement('input');
         sliderRows.type = 'range';
         sliderRows.min = 1 + "";

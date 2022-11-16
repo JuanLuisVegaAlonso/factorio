@@ -7,6 +7,7 @@ import { RenderController } from './controller/RenderController';
 import { FactorioDataViewerController } from './controller/FactorioDataViewerController';
 import { allItems, segmentedDisplay } from './data/baseInfo';
 import { ToolsController } from './controller/ToolsController';
+import { LampBlueprint } from './data/LampBlueprint';
 let rows = 7;
 let columns = 5;
 const maxHeight = 600;
@@ -32,23 +33,29 @@ export function changeView(elem: HTMLElement) {
 window.onload = () => {
 
 
+    
+    const matrix = new Matrix(rows, columns, 10, allItems.length);
+    const matrixController = new MatrixController(matrix, maxHeight);
+    matrixController.init();
+    const renderController = new RenderController(matrix, maxHeight)
+    const lampBlueprint = new LampBlueprint(matrix);
+    const factorioDataViewerController = new FactorioDataViewerController(lampBlueprint);
+    factorioDataViewerController.init();
+
+    const toolController = new ToolsController(matrix, lampBlueprint);
+    toolController.init();
+
     //navigation
     const nav = document.getElementsByTagName('nav')[0]!;
     const navEntries = nav.getElementsByTagName('li');
     for (let i = 0; i < navEntries.length; i++) {
         const navEntry = navEntries[i];
-        navEntry.addEventListener('click',()=>changeView(navEntry))
+        navEntry.addEventListener('click',()=> {
+            changeView(navEntry);
+            factorioDataViewerController.redraw();
+        })
     }
     changeView(navEntries[0])
-    const matrix = new Matrix(rows, columns, 10, allItems.length);
-    const matrixController = new MatrixController(matrix, maxHeight);
-    matrixController.init();
-    const renderController = new RenderController(matrix, maxHeight)
-    const factorioDataViewerController = new FactorioDataViewerController(segmentedDisplay);
-    factorioDataViewerController.init();
-
-    const toolController = new ToolsController(matrix, segmentedDisplay);
-    toolController.init();
 
     // Scene for debugging
 
