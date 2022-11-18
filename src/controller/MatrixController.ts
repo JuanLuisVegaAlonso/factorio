@@ -40,6 +40,7 @@ export class MatrixController {
         shiftControl.appendChild(shiftLabel);
         shiftControl.appendChild(this.createMiniMatrix(number))
         shiftControl.setAttribute('id', getShiftControlId(number));
+        shiftControl.classList.add("shift-control");
         shiftLabel.innerText = number + '';
         shiftControl.onclick = () => {
             this.matrix.changeShift(number);
@@ -127,7 +128,7 @@ export class MatrixController {
         const sliderRows = document.createElement('input');
         sliderRows.type = 'range';
         sliderRows.min = 1 + "";
-        sliderRows.max = this.matrix.maxNumberOfCells + "";
+        sliderRows.max = Math.floor(Math.sqrt(this.matrix.maxNumberOfCells)) + "";
         sliderRows.setAttribute("id", "slider-rows");
         sliderRows.setAttribute("orient", "vertical");
         
@@ -137,7 +138,7 @@ export class MatrixController {
         const sliderColumns = document.createElement('input');
         sliderColumns.type = 'range';
         sliderColumns.min = 1 + "";
-        sliderColumns.max = this.matrix.maxNumberOfCells + "";
+        sliderColumns.max = Math.floor(Math.sqrt(this.matrix.maxNumberOfCells)) + "";
         sliderColumns.setAttribute("id", "slider-columns");
         this.matrixContainer.appendChild(sliderColumns);
 
@@ -163,7 +164,6 @@ export class MatrixController {
         const rows = Number(sliderRows.value);
         const cols = Number(sliderColumns.value);
         const maxCols = Math.floor(this.matrix.maxNumberOfCells / rows);
-        sliderColumns.max =  maxCols + "";
         if (cols > maxCols) {
             sliderColumns.value = maxCols + "";
         }
@@ -173,8 +173,6 @@ export class MatrixController {
         const rows = Number(sliderRows.value);
         const cols = Number(sliderColumns.value);
         const maxRows = Math.floor(this.matrix.maxNumberOfCells / cols);
-        sliderRows.max =  maxRows + "";
-            
         if (rows > maxRows) {
             sliderRows.value = maxRows + "";
         }

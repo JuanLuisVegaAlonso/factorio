@@ -10,7 +10,7 @@ export class RenderController {
     private camera: OrthographicCamera;
     private renderer: WebGLRenderer;
     private controls: any;
-    private labelRenderer: any;
+    private labelRenderer: CSS3DRenderer;
     private cubeSize: number;
     private meshMatrix: {cube: Mesh, line: Mesh}[][][];
     private cubes: Group;
@@ -195,9 +195,8 @@ export class RenderController {
         this.anchor.setRotationFromQuaternion(this.camera.quaternion);
         this.raycaster.setFromCamera( this.mouse, this.camera );
 
-        const reverseCamera = this.camera.position.clone().multiplyScalar(-1);
         for (const label of this.labels) {
-            label.lookAt(reverseCamera);
+            label.lookAt(this.camera.position.x, this.camera.position.y, label.position.z);
         }
 
         // calculate objects intersecting the picking ray

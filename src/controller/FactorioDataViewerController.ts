@@ -39,6 +39,10 @@ export class FactorioDataViewerController {
     }
 
     redraw() {
+        const {clientWidth, clientHeight} = this.section;
+        console.log({clientWidth, clientHeight});
+        this.canvas.width = clientWidth - 10;
+        this.canvas.height = clientHeight - 10;
         const oldFill = this.ctx.fillStyle;
         this.ctx.fillStyle = "white";
         this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
@@ -79,10 +83,7 @@ export class FactorioDataViewerController {
             printText(entity.entity_number + '', 0);
             printText(`[${entity.position.x}, ${entity.position.y}]`, 1);
 
-            const index = entityMap.findIndex(a => a === entity.entity_number);
-            if (index >= 0) {
-                printText(entity.control_behavior.circuit_condition?.first_signal.name, 2);
-            }
+            printText(entity.control_behavior.circuit_condition?.first_signal.name, 2);
 
 
             for (let connectionKey in entity.connections) {

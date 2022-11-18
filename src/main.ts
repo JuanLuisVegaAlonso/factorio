@@ -13,9 +13,14 @@ let columns = 5;
 const maxHeight = 600;
 
 
-export function changeView(elem: HTMLElement) {
+export function changeView(elem: HTMLElement, factorioDataViewerController: FactorioDataViewerController, navEntries: HTMLCollectionOf<HTMLLIElement>) {
     const navigationData = elem.getAttribute("data-navigation")!;
     const sections = document.getElementsByTagName("section");
+    
+    for (let j = 0; j < navEntries.length; j++) {
+        navEntries[j].classList.remove("current");
+    }
+    elem.classList.add("current");
     for (let i = 0; i < sections.length; i++) {
         const section = sections[i];
         const navigationDataSection = section.getAttribute("data-navigation")!;
@@ -26,6 +31,7 @@ export function changeView(elem: HTMLElement) {
         }
         
     }
+    factorioDataViewerController.redraw();
 }
 
 
@@ -51,11 +57,10 @@ window.onload = () => {
     for (let i = 0; i < navEntries.length; i++) {
         const navEntry = navEntries[i];
         navEntry.addEventListener('click',()=> {
-            changeView(navEntry);
-            factorioDataViewerController.redraw();
+            changeView(navEntry, factorioDataViewerController, navEntries);
         })
     }
-    changeView(navEntries[0])
+    changeView(navEntries[0], factorioDataViewerController, navEntries)
 
     // Scene for debugging
 
