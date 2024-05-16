@@ -20,18 +20,26 @@ export class ToolsController {
     public init() {
         this.section = document.getElementById("tools")!;
 
-        const button = document.createElement('button');
-        button.innerHTML = "export";
-        button.addEventListener("click", () => this.exportBlueprint());
-        this.section.appendChild(button);
+        const buttonExport = document.createElement('button');
+        buttonExport.innerHTML = "export";
+        buttonExport.id = 'export';
+        buttonExport.addEventListener("click", () => this.exportBlueprint());
+        this.section.appendChild(buttonExport);
 
         const buttonImport = document.createElement('button');
         buttonImport.innerHTML = "import";
+        buttonImport.id = 'import'
         buttonImport.addEventListener("click", () => this.importBlueprint());
         this.section.appendChild(buttonImport);
 
         this.blueprintInput = document.createElement('textarea');
+        this.blueprintInput.id = 'blueprint-input'
         this.section.appendChild(this.blueprintInput);
+
+        const lampTypeLabel = document.createElement('label');
+        lampTypeLabel.innerHTML = 'Lamp type';
+        lampTypeLabel.id = 'lamp-type-label';
+        this.section.appendChild(lampTypeLabel);
 
         this.lampTypeSelect = document.createElement('select');
         const smallLampOption = document.createElement('option');
