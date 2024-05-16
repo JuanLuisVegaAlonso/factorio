@@ -1,5 +1,5 @@
 import { encode, decode, Blueprint } from '@jensforstmann/factorio-blueprint-tools';
-import { entityMap, numberColumns, numberRows, virtualSignals } from "../data/baseInfo";
+import { allItems, entityMap, numberColumns, numberRows, virtualSignals } from "../data/baseInfo";
 import { Entity, FactorioInfo, FiltersEntity, Signal } from "../data/FactorioData";
 import { LampBlueprint } from '../data/LampBlueprint';
 import { Matrix } from "../data/matrix";
@@ -63,16 +63,6 @@ export class ToolsController {
     private importBlueprint() {
         const blueprint: FactorioInfo = decode(this.blueprintInput.value) as FactorioInfo;
         this.factorioData = blueprint;
-
-        const constantCombinator1 = this.factorioData.blueprint.entities.find(a => a.entity_number === 40)!;
-        const constantCombinator2: Entity = this.factorioData.blueprint.entities.find(a => a.entity_number === 42)!;
-        const filters = [...constantCombinator1.control_behavior.filters!, ...constantCombinator2.control_behavior.filters!];
-
-        for(const filter of filters) {
-            const i = virtualSignals.findIndex(a => a == filter.signal.name);
-            const row = Math.floor(i / numberColumns);
-            const col = i % numberColumns;
-            this.matrix.setRawValue(row,col, filter.count);
-        }
+        this.lampBlueprint.importBlueprint(this.factorioData);
     }
 }

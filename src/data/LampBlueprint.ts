@@ -1,5 +1,5 @@
 import { allItems } from "./baseInfo";
-import { Entity, FactorioInfo } from "./FactorioData";
+import { Entity, FactorioInfo, FiltersEntity } from "./FactorioData";
 import { Matrix, MatrixEvents } from "./matrix";
 
 export class LampBlueprint {
@@ -225,6 +225,8 @@ export class LampBlueprint {
         }
     }
     public blueprint: FactorioInfo;
+    private readonly numberOfCombinators = 6;
+
     constructor(private readonly matrix: Matrix, public lampType = "small-lamp", public lampSize = 1) {
         this.matrix.addChangeListener((matrixEvent) => this.onMatrixChange(matrixEvent));
         this.generateBlueprint();
@@ -344,7 +346,7 @@ export class LampBlueprint {
         return this.lamps[this.lamps.length - 1].entity_number + index + 1;
     }
     private getLampId(row: number, col: number): number {
-        return 6 + row * this.matrix.columns + col + 1;
+        return this.numberOfCombinators + row * this.matrix.columns + col + 1;
     }
 
     private tellListeners() {
@@ -382,8 +384,25 @@ export class LampBlueprint {
 
     }
 
-    importBlueprint() {
-
+    importBlueprint(factorioData: FactorioInfo) {
+        
+        const filters = factorioData.blueprint.entities.filter(a => a.name === 'constant-combinator').reduce((acc, next) => [...next.control_behavior.filters!, ...acc], [] as FiltersEntity[])
+        const {rows, columns} = this.getMatrixSize(factorioData);
+        this.matrix.changeMatrixSize(rows,columns)
+        for(const filter of filters) {
+            const i = allItems.findIndex(a => a.name == filter.signal.name);
+            const row = Math.floor(i / columns);
+            const col = i % columns;
+            this.matrix.setRawValue(row,col, filter.count);
+        }
+    }
+    getMatrixSize(factorioData: FactorioInfo): {rows: number, columns: number} {
+        const sortedLamps = factorioData.blueprint.entities.filter(a => a.name === this.lampType).sort((a,b) => a.position.x - b.position.x);
+        const firstLamp = sortedLamps[0];
+        const lastLamp = sortedLamps[sortedLamps.length - 1];
+        const columns =  Math.round(Math.abs(firstLamp.position.x - lastLamp.position.x) / this.lampSize);
+        const rows = sortedLamps.length / columns;
+        return {columns, rows}
     }
 
     addListener(listener: ((newBlueprint: FactorioInfo) => void)) {
