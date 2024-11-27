@@ -1,7 +1,8 @@
 import { BoxGeometry, Color, EdgesGeometry, Group, LineBasicMaterial, LineSegments,  Mesh, MeshBasicMaterial, Object3D, OrthographicCamera, Raycaster, Scene, Vector2, Vector3, WebGLRenderer } from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 import {CSS3DObject, CSS3DRenderer} from 'three/examples/jsm/renderers/CSS3DRenderer';
-import { SelectionAnimation } from '../animation/selectionAnimation';
+import { AlternativeSelectionAnimation } from '../animation/AlternativeSelectionAnimation';
+import { Animation } from '../animation/animation';
 import { Matrix, MatrixEvents } from '../data/matrix';
 
 export class RenderController {
@@ -15,7 +16,7 @@ export class RenderController {
     private meshMatrix: {cube: Mesh, line: Mesh}[][][];
     private cubes: Group;
     private anchor: Object3D;
-    private animations: SelectionAnimation[];
+    private animations: Animation[];
     private inactiveMaterial: MeshBasicMaterial;
     private activeMaterial: MeshBasicMaterial;
     private nonTransparentInactiveMaterial: MeshBasicMaterial;
@@ -29,14 +30,17 @@ export class RenderController {
     private raycaster: Raycaster;
     private mouse: Vector2;
     private lines: Group;
+    private testAnimation: Animation;
 
 
     constructor(public matrix: Matrix,public maxHeight) {
         Object3D.DefaultUp = new Vector3(0,0,1);
+
         this.binaryRepresentationElement = document.getElementById('binary-representation')!;
         this.scene = new Scene();
-        this.camera = new OrthographicCamera( -150, 150, 150, -150, 1, 1000 );
+        this.camera = new OrthographicCamera( -150, 150, 150, -150, .1, 1000 );
         this.renderer = new WebGLRenderer({ antialias: true });
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.labelRenderer = new CSS3DRenderer();
         this.maxHeight = maxHeight;
@@ -46,7 +50,6 @@ export class RenderController {
         this.cubes = new Group();
         this.anchor = new Object3D();
         this.animations = [];
-
         const reverseCamera = this.camera.position.clone().multiplyScalar(-1);
         for (let i = 0; i < 10; i++) {
             const elem = document.createElement('span');
@@ -55,20 +58,22 @@ export class RenderController {
             const object = new CSS3DObject(elem);
             this.labels.push(object);
             this.scene.add(object)
-            object.position.set(this.cubeSize * (matrix.rows + 1) + 10, this.cubeSize * matrix.columns + 10, this.cubeSize * (i));
+            object.position.set(this.cubeSize * (matrix.rows + 1) + 10, this.cubeSize * (matrix.columns + 1) + 10, this.cubeSize * (i));
+            object.position.set(0, 0, this.cubeSize * (i));
             object.lookAt(reverseCamera)
         }
 
-        this.inactiveMaterial = new MeshBasicMaterial( { color: 0x000000, transparent: true, depthTest: true, opacity: 0.011 } );
-        this.activeMaterial = new MeshBasicMaterial( { color: 0x4c4c5f, transparent: true, depthTest: true, opacity: 0.2 } );
-        this.nonTransparentInactiveMaterial = new MeshBasicMaterial( { color: 0xCAC9C9, transparent: false, opacity: 0.1 } );
-        this.nonTransparentActiveMaterial = new MeshBasicMaterial( { color: 0x4c4c5f, transparent: false, opacity: 0.2 } );
+        this.inactiveMaterial = new MeshBasicMaterial( { color: 0x1e1e1f, transparent: true, depthTest: true, opacity: 0.011 } );
+        this.activeMaterial = new MeshBasicMaterial( { color: 0xf8f8f8, transparent: true, depthTest: true, opacity: 0.2 } );
+        this.nonTransparentInactiveMaterial = new MeshBasicMaterial( { color: 0x1e1e1f, transparent: false, opacity: 0.1 } );
+        this.nonTransparentActiveMaterial = new MeshBasicMaterial( { color: 0xf8f8f8, transparent: false, opacity: 0.2 } );
         this.intersectedMaterial = new MeshBasicMaterial( { color: 0x101A2C, transparent: false, opacity: 0.2 } );
 
 
-        this.scene.background = new Color( 0xf0f0f0 );
+        this.scene.background = new Color( 0x313031 );
         this.camera.position.set( 90, 80, 150 );
         this.camera.lookAt( 0, 0, 50 );
+        this.camera.updateMatrixWorld()
         this.renderer.setSize(900, this.maxHeight);
         this.controls.enableZoom = false;
 
@@ -78,7 +83,7 @@ export class RenderController {
         this.selecting = false;
         this.selected = false;
 
-        this.labelRenderer.setSize( 900, maxHeight );
+        this.labelRenderer.setSize( 900, this.maxHeight );
         this.labelRenderer.domElement.style.position = 'absolute';
         this.labelRenderer.domElement.style.top = '0px';
         this.labelRenderer.domElement.style['pointer-events'] ='none';
@@ -86,7 +91,7 @@ export class RenderController {
         this.binaryRepresentationElement.appendChild(this.renderer.domElement);
         this.binaryRepresentationElement.appendChild(this.labelRenderer.domElement );
         this.binaryRepresentationElement.addEventListener('mousemove', event => this.onMouseMove(event));
-        this.binaryRepresentationElement.addEventListener('click', () => this.onClick());
+        this.binaryRepresentationElement.addEventListener('mousedown', () => this.onClick());
         this.buildCubes();
 
         this.matrix.addChangeListener((eventType?: MatrixEvents) => {
@@ -180,12 +185,25 @@ export class RenderController {
             this.selected = true;
             const intersects = this.raycaster.intersectObjects( this.cubes.children);
             const {row, column} = intersects[0].object.userData;
-
-            this.animations.push( new SelectionAnimation(this.meshMatrix, this.anchor, this.cubes,  row, column));
+            const cubeConga = this.meshMatrix[row][column].map(a => a.cube)
+            cubeConga.forEach((cubeMesh, i) => this.animations.push(new AlternativeSelectionAnimation(
+                .5,
+                cubeMesh.position,
+                this.camera,
+                this.cubes,
+                this.cubes,
+                cubeMesh,
+                new Vector3(0,0,1),
+                200,
+                i
+                )
+            ))
+            console.log(this.animations)
+            //this.animations.push( new SelectionAnimation(this.meshMatrix, this.anchor, this.cubes,  row, column));
             this.updateMaterials();
         } else if (this.selected) {
             this.selected = false;
-            this.animations[this.animations.length - 1].reverse();
+            this.animations.filter(a => !a.reversing).forEach(a => a.reverse())
         }
 
     }
@@ -197,6 +215,10 @@ export class RenderController {
 
         for (const label of this.labels) {
             label.lookAt(this.camera.position.x, this.camera.position.y, label.position.z);
+        }
+        if(this.testAnimation) {
+            this.testAnimation.tick();
+            this.cubes.children[0].position.copy(this.testAnimation.position);
         }
 
         // calculate objects intersecting the picking ray

@@ -7,6 +7,7 @@ import {
     Vector3
 } from 'three';
 export class SelectionAnimation {
+    public position: Vector3;
     private duration: number;
     private cubeSize: number;
     private upDuration: number;
@@ -98,6 +99,7 @@ export class SelectionAnimation {
         if (!this.reversed) {
             this.forward();
         } else {
+            
             this.backwards();
         }
     }
