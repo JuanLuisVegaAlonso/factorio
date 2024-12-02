@@ -4,7 +4,7 @@
   "description": "Factorio light bit-shift based encoding tool",
   "scripts": {
     "start": "parcel serve src/index.html --port=4200",
-    "build": "parcel build"
+    "build": "parcel build --public-url=/factorio"
   },
   "devDependencies": {
     "@types/three": "^0.136.1",
