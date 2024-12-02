@@ -35,16 +35,18 @@ export class RenderController {
 
     constructor(public matrix: Matrix,public maxHeight) {
         Object3D.DefaultUp = new Vector3(0,0,1);
-
+        this.cubeSize = 10;
         this.binaryRepresentationElement = document.getElementById('binary-representation')!;
         this.scene = new Scene();
-        this.camera = new OrthographicCamera( -150, 150, 150, -150, .1, 1000 );
+        const offset = 160;
+        const frustrum = (this.cubeSize * this.matrix.rows + offset)/ 2 
+        this.camera = new OrthographicCamera( frustrum * -1, frustrum , frustrum , frustrum * - 1 , .1, 1000 );
         this.renderer = new WebGLRenderer({ antialias: true });
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        
         this.labelRenderer = new CSS3DRenderer();
         this.maxHeight = maxHeight;
-        this.cubeSize = 10;
+        
         this.meshMatrix = [];
         this.lines = new Group();
         this.cubes = new Group();
@@ -54,28 +56,28 @@ export class RenderController {
         for (let i = 0; i < 10; i++) {
             const elem = document.createElement('span');
             elem.classList.add("exponential-label")
-            elem.innerHTML = `2<sup>${i}</sup>`;
+            elem.innerHTML = `}2<sup>${i}</sup>`;
             const object = new CSS3DObject(elem);
             this.labels.push(object);
             this.scene.add(object)
-            object.position.set(this.cubeSize * (matrix.rows + 1) + 10, this.cubeSize * (matrix.columns + 1) + 10, this.cubeSize * (i));
-            object.position.set(0, 0, this.cubeSize * (i));
+            //object.position.set(this.cubeSize * (matrix.rows + 1) + 10, this.cubeSize * (matrix.columns + 1) + 10, this.cubeSize * (i));
+            object.position.set(-10, this.cubeSize * (matrix.columns + 3), (this.cubeSize + 1.2)* (i));
             object.lookAt(reverseCamera)
         }
 
-        this.inactiveMaterial = new MeshBasicMaterial( { color: 0x1e1e1f, transparent: true, depthTest: true, opacity: 0.011 } );
+        this.inactiveMaterial = new MeshBasicMaterial( { color: 0x1e1e1f, transparent: true, depthTest: true, opacity: 0.11 } );
         this.activeMaterial = new MeshBasicMaterial( { color: 0xf8f8f8, transparent: true, depthTest: true, opacity: 0.2 } );
         this.nonTransparentInactiveMaterial = new MeshBasicMaterial( { color: 0x1e1e1f, transparent: false, opacity: 0.1 } );
         this.nonTransparentActiveMaterial = new MeshBasicMaterial( { color: 0xf8f8f8, transparent: false, opacity: 0.2 } );
-        this.intersectedMaterial = new MeshBasicMaterial( { color: 0x101A2C, transparent: false, opacity: 0.2 } );
+        this.intersectedMaterial = new MeshBasicMaterial( { color: 0xe39827, transparent: false, opacity: 0.2 } );
 
 
         this.scene.background = new Color( 0x313031 );
-        this.camera.position.set( 90, 80, 150 );
+        this.camera.position.set( (this.cubeSize * this.matrix.rows + offset) * 2 , this.cubeSize * this.matrix.columns + offset , this.matrix.maxShifts * this.cubeSize + offset);
         this.camera.lookAt( 0, 0, 50 );
         this.camera.updateMatrixWorld()
         this.renderer.setSize(900, this.maxHeight);
-        this.controls.enableZoom = false;
+        
 
         
         // animation
