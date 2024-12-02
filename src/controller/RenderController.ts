@@ -61,7 +61,7 @@ export class RenderController {
             this.labels.push(object);
             this.scene.add(object)
             //object.position.set(this.cubeSize * (matrix.rows + 1) + 10, this.cubeSize * (matrix.columns + 1) + 10, this.cubeSize * (i));
-            object.position.set(-10, this.cubeSize * (matrix.columns + 3), (this.cubeSize + 1.2)* (i));
+            object.position.set(-10, (this.cubeSize *1.5 + 1) * (matrix.columns), (this.cubeSize + 1.2)* (i));
             object.lookAt(reverseCamera)
         }
 
@@ -99,6 +99,7 @@ export class RenderController {
         this.matrix.addChangeListener((eventType?: MatrixEvents) => {
             if (eventType && eventType === MatrixEvents.SIZE_CHANGED) {
                 this.buildCubes();
+                this.labels.forEach((object,i) => object.position.set(-this.cubeSize, (this.cubeSize *1.5 + 1) * (matrix.columns) , (this.cubeSize + 1)* (i)))
             }
             this.updateMaterials();
         });
